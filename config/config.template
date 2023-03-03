@@ -1,0 +1,16 @@
+elastic:
+  host: localhost
+  port: 9200
+
+postgres:
+  user: postgres
+  password: post1235
+  port: 5432
+  database: vocabulary
+
+salt: salt1111
+
+aws:
+  region: us-east-1
+  accessId: CDSC
+  secret: CSDCSDCSDCSDCDS
