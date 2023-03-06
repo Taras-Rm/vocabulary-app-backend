@@ -24,6 +24,7 @@ type PostgresConfig struct {
 	Port     string `yaml:"port"`
 	Database string `yaml:"database"`
 	Password string `yaml:"password"`
+	Host     string `yaml:"host"`
 }
 
 type AWSConfig struct {

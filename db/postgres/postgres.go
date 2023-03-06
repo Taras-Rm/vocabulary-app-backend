@@ -8,7 +8,7 @@ import (
 )
 
 func NewPostgres(cfg config.PostgresConfig) *pg.DB {
-	address := fmt.Sprintf("localhost:%s", cfg.Port)
+	address := fmt.Sprintf(cfg.Host+":%s", cfg.Port)
 
 	conn := pg.Connect(&pg.Options{
 		Database: cfg.Database,
