@@ -34,17 +34,31 @@ type AWSConfig struct {
 var Config AppConfig
 
 func init() {
-	viper.AddConfigPath("./config")
-	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	if viper.Get("ENV") == "prod" {
+		setProdConfig()
+	} else {
+		viper.AddConfigPath("./config")
+		viper.SetConfigName("config")
+		viper.SetConfigType("yaml")
+		err := viper.ReadInConfig()
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		fmt.Println(err)
+		err = viper.Unmarshal(&Config)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
 
-	err = viper.Unmarshal(&Config)
-	if err != nil {
-		fmt.Println(err)
-	}
+}
+
+func setProdConfig() {
+	Config.Postgres.Database = viper.GetString("DB_NAME")
+	Config.Postgres.User = viper.GetString("DB_USER")
+	Config.Postgres.Port = viper.GetString("DB_PORT")
+	Config.Postgres.Password = viper.GetString("DB_PASSWORD")
+
+	Config.Salt = viper.GetString("SALT")
+
 }
