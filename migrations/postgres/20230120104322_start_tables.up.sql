@@ -4,14 +4,14 @@ CREATE TABLE users(
     name text,
     email text,
     password text,
-    create_at TIMESTAMP WITH TIME ZONE
+    created_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE collections(
     id SERIAL PRIMARY KEY,
     name text,
     owner_id int,
-    create_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE,
     pdf_file_url text,
 
     CONSTRAINT fk_owner
