@@ -64,7 +64,7 @@ func main() {
 	})
 
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "hello from api")
+		ctx.JSON(http.StatusOK, "hello "+config.Salt)
 	})
 
 	app.AttachEndpoints(router)
