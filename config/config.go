@@ -37,7 +37,8 @@ var Config AppConfig
 func init() {
 	env, _ := os.LookupEnv("ENV")
 	fmt.Println("Envirq " + env)
-	if viper.Get("ENV") == "prod" {
+
+	if env == "prod" {
 		setProdConfig()
 	} else {
 		viper.AddConfigPath("./config")
@@ -57,11 +58,33 @@ func init() {
 }
 
 func setProdConfig() {
-	Config.Postgres.Database = viper.GetString("DB_NAME")
-	Config.Postgres.User = viper.GetString("DB_USER")
-	Config.Postgres.Port = viper.GetString("DB_PORT")
-	Config.Postgres.Password = viper.GetString("DB_PASSWORD")
+	data, ok := os.LookupEnv("DB_NAME")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Postgres.Database = data
 
-	Config.Salt = viper.GetString("SALT")
+	data, ok = os.LookupEnv("DB_USER")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Postgres.User = data
 
+	data, ok = os.LookupEnv("DB_PORT")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Postgres.Port = data
+
+	data, ok = os.LookupEnv("DB_PASSWORD")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Postgres.Password = data
+
+	data, ok = os.LookupEnv("SALT")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Salt = data
 }
