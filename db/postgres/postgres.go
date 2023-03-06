@@ -19,3 +19,9 @@ func NewPostgres(cfg config.PostgresConfig) *pg.DB {
 
 	return conn
 }
+
+func DBConnectionString() string {
+	conn := config.Config.Postgres
+	addr := conn.Host + ":" + conn.Port
+	return fmt.Sprintf("postgres://%s:%s@%s/%s", conn.User, conn.Password, addr, conn.Database)
+}
