@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"vacabulary/api"
 	"vacabulary/config"
-	"vacabulary/db/postgres"
 	"vacabulary/pkg/s3"
 	"vacabulary/pkg/token"
 	"vacabulary/pkg/translator"
@@ -13,6 +12,7 @@ import (
 	postgresRepo "vacabulary/repositories/postgres"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-pg/pg/v10"
 	"github.com/olivere/elastic/v7"
 
 	"vacabulary/server"
@@ -23,7 +23,7 @@ func main() {
 
 	// elClient := myel.NewElasticClient(config.Elastic.Host, config.Elastic.Port)
 
-	pgClient := postgres.NewPostgres(config.Postgres)
+	// pgClient := postgres.NewPostgres(config.Postgres)
 
 	// createIndices
 	// err := elClient.CreateVocabularyIndices()
@@ -37,8 +37,8 @@ func main() {
 
 	// elWordsRepo := elrepositories.NewWordsRepo(elClient.Client)
 	elWordsRepo := elrepositories.NewWordsRepo(&elastic.Client{})
-	usersRepo := postgresRepo.NewUsersRepo(pgClient)
-	collectionsRepo := postgresRepo.NewCollectionsRepo(pgClient)
+	usersRepo := postgresRepo.NewUsersRepo(&pg.DB{})
+	collectionsRepo := postgresRepo.NewCollectionsRepo(&pg.DB{})
 
 	router := server.NewServer()
 
