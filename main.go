@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"vacabulary/api"
 	"vacabulary/config"
@@ -22,6 +23,7 @@ func main() {
 	cfg := config.Config
 
 	// elClient := myel.NewElasticClient(config.Elastic.Host, config.Elastic.Port)
+	fmt.Println(cfg.Postgres.Host)
 
 	pgClient := postgres.NewPostgres(cfg.Postgres)
 

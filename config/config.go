@@ -83,6 +83,12 @@ func setProdConfig() {
 	}
 	Config.Postgres.Password = data
 
+	data, ok = os.LookupEnv("DB_HOST")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Postgres.Host = data
+
 	data, ok = os.LookupEnv("SALT")
 	if !ok {
 		fmt.Println("can`t get env")
