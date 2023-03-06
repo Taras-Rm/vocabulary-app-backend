@@ -25,7 +25,7 @@ func main() {
 	// elClient := myel.NewElasticClient(config.Elastic.Host, config.Elastic.Port)
 	fmt.Println(cfg.Postgres.Host)
 
-	migrateDB()
+	postgres.MigrateDB()
 	pgClient := postgres.NewPostgres(cfg.Postgres)
 
 	// createIndices

@@ -1,15 +1,16 @@
-package main
+package postgres
 
 import (
 	"fmt"
 	"os"
-	"vacabulary/db/postgres"
 
 	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func migrateDB() {
-	migration, err := migrate.New("file://migrations/postgres", postgres.DBConnectionString()+"?sslmode=disable")
+func MigrateDB() {
+	migration, err := migrate.New("file://migrations/postgres", DBConnectionString()+"?sslmode=disable")
 	if err != nil {
 		fmt.Println(err.Error())
 		os.Exit(1)
