@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -34,6 +35,8 @@ type AWSConfig struct {
 var Config AppConfig
 
 func init() {
+	env, _ := os.LookupEnv("ENV")
+	fmt.Println("Envirq " + env)
 	if viper.Get("ENV") == "prod" {
 		setProdConfig()
 	} else {

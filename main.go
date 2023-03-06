@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	config := config.Config
+	cfg := config.Config
 
 	// elClient := myel.NewElasticClient(config.Elastic.Host, config.Elastic.Port)
 
@@ -31,9 +31,9 @@ func main() {
 	// 	panic("can't create elastic indices")
 	// }
 
-	tokenService := token.NewTokenService(config.Salt)
-	translatorManager := translator.NewTranslatorManager(config.AWS)
-	s3Manager := s3.NewS3Manager(config.AWS)
+	tokenService := token.NewTokenService(cfg.Salt)
+	translatorManager := translator.NewTranslatorManager(cfg.AWS)
+	s3Manager := s3.NewS3Manager(cfg.AWS)
 
 	// elWordsRepo := elrepositories.NewWordsRepo(elClient.Client)
 	elWordsRepo := elrepositories.NewWordsRepo(&elastic.Client{})
@@ -64,7 +64,7 @@ func main() {
 	})
 
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "hello "+config.Salt)
+		ctx.JSON(http.StatusOK, "hello "+cfg.Salt)
 	})
 
 	app.AttachEndpoints(router)
