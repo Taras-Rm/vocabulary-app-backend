@@ -12,7 +12,8 @@ import (
 
 func (a *App) authorizeRequest(ctx *gin.Context) {
 	h := ctx.GetHeader("Authorization")
-	fmt.Println("Auth " + h)
+	fmt.Print("Header")
+	fmt.Printf("%+x", ctx.Request.Header)
 
 	if h == "" {
 		h = ctx.GetHeader("authorization")
