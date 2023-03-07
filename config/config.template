@@ -1,6 +1,8 @@
 elastic:
   host: localhost
   port: 9200
+  username: user
+  password: pass
 
 postgres:
   user: postgres
