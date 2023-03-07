@@ -3,7 +3,6 @@ package elastic
 import (
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 	"vacabulary/config"
@@ -19,9 +18,9 @@ func NewElasticClient(cfg config.ElasticConfig) *ElasticClient {
 	var client *elastic.Client
 
 	if config.IsProdEnv() {
-		client = getClient(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
+		client = getClient(cfg.Url, cfg.Username, cfg.Password)
 	} else {
-		client = getClientLocal(cfg.Host, cfg.Port)
+		client = getClientLocal(cfg.Url)
 	}
 
 	if client == nil {
@@ -33,19 +32,14 @@ func NewElasticClient(cfg config.ElasticConfig) *ElasticClient {
 	}
 }
 
-func getClientLocal(host, port string) *elastic.Client {
+func getClientLocal(url string) *elastic.Client {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	var client *elastic.Client
 	var err error
 
-	if host == "" {
-		host = "elasticsearch"
-	}
-	connectionUrl := fmt.Sprintf("http://%s:%s", host, port)
-
 	for {
 		client, err = elastic.NewSimpleClient(
-			elastic.SetURL(connectionUrl),
+			elastic.SetURL(url),
 			elastic.SetHealthcheck(true),
 		)
 		if err != nil {
@@ -58,12 +52,10 @@ func getClientLocal(host, port string) *elastic.Client {
 	return client
 }
 
-func getClient(host, port, username, password string) *elastic.Client {
-	connectionUrl := fmt.Sprintf("http://%s:%s", host, port)
-
+func getClient(url, username, password string) *elastic.Client {
 	client, err := elastic.NewSimpleClient(
 		elastic.SetSniff(false),
-		elastic.SetURL(connectionUrl),
+		elastic.SetURL(url),
 		elastic.SetBasicAuth(username, password),
 		elastic.SetHealthcheck(true),
 	)
