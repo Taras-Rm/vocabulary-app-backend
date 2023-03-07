@@ -62,6 +62,7 @@ func (p *Local) GetEnvVariables() error {
 }
 
 func (p *Prod) GetEnvVariables() error {
+	// db
 	data, ok := os.LookupEnv("DB_NAME")
 	if !ok {
 		fmt.Println("can`t get env")
@@ -92,11 +93,37 @@ func (p *Prod) GetEnvVariables() error {
 	}
 	Config.Postgres.Host = data
 
+	// salt
 	data, ok = os.LookupEnv("SALT")
 	if !ok {
 		fmt.Println("can`t get env")
 	}
 	Config.Salt = data
+
+	// elasticsearch
+	data, ok = os.LookupEnv("ES_HOST")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Elastic.Host = data
+
+	data, ok = os.LookupEnv("ES_PORT")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Elastic.Port = data
+
+	data, ok = os.LookupEnv("ES_USERNAME")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Elastic.Username = data
+
+	data, ok = os.LookupEnv("ES_PASSWORD")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.Elastic.Password = data
 
 	return nil
 }
