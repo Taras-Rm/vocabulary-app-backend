@@ -2,7 +2,6 @@ package api
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 	"vacabulary/models"
@@ -11,15 +10,7 @@ import (
 )
 
 func (a *App) authorizeRequest(ctx *gin.Context) {
-	h := ctx.GetHeader("Authorization")
-	fmt.Print("Header")
-	fmt.Printf("%+v", ctx.Request.Header)
-
-	if h == "" {
-		h = ctx.GetHeader("authorization")
-	}
-
-	header := strings.Split(h, " ")
+	header := strings.Split(ctx.GetHeader("Authorization"), " ")
 
 	if len(header) < 2 {
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("invalid auth header").Error())
