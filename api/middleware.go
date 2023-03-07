@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"vacabulary/models"
@@ -11,6 +12,7 @@ import (
 
 func (a *App) authorizeRequest(ctx *gin.Context) {
 	h := ctx.GetHeader("Authorization")
+	fmt.Println("Auth " + h)
 
 	if h == "" {
 		h = ctx.GetHeader("authorization")
