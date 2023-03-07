@@ -10,7 +10,13 @@ import (
 )
 
 func (a *App) authorizeRequest(ctx *gin.Context) {
-	header := strings.Split(ctx.GetHeader("Authorization"), " ")
+	h := ctx.GetHeader("Authorization")
+
+	if h == "" {
+		h = ctx.GetHeader("authorization")
+	}
+
+	header := strings.Split(h, " ")
 
 	if len(header) < 2 {
 		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("invalid auth header").Error())
