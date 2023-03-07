@@ -5,7 +5,9 @@ import (
 	"net/http"
 	"vacabulary/api"
 	"vacabulary/config"
+	"vacabulary/db/elastic"
 	"vacabulary/db/postgres"
+
 	"vacabulary/pkg/s3"
 	"vacabulary/pkg/token"
 	"vacabulary/pkg/translator"
@@ -14,7 +16,6 @@ import (
 	postgresRepo "vacabulary/repositories/postgres"
 
 	"github.com/gin-gonic/gin"
-	"github.com/olivere/elastic/v7"
 
 	"vacabulary/server"
 )
@@ -22,24 +23,23 @@ import (
 func main() {
 	cfg := config.Config
 
-	// elClient := myel.NewElasticClient(config.Elastic.Host, config.Elastic.Port)
+	elClient := elastic.NewElasticClient(cfg.Elastic)
 	fmt.Println(cfg.Postgres.Host)
 
 	postgres.MigrateDB()
 	pgClient := postgres.NewPostgres(cfg.Postgres)
 
 	// createIndices
-	// err := elClient.CreateVocabularyIndices()
-	// if err != nil {
-	// 	panic("can't create elastic indices")
-	// }
+	err := elClient.CreateVocabularyIndices()
+	if err != nil {
+		panic("can't create elastic indices")
+	}
 
 	tokenService := token.NewTokenService(cfg.Salt)
 	translatorManager := translator.NewTranslatorManager(cfg.AWS)
 	s3Manager := s3.NewS3Manager(cfg.AWS)
 
-	// elWordsRepo := elrepositories.NewWordsRepo(elClient.Client)
-	elWordsRepo := elrepositories.NewWordsRepo(&elastic.Client{})
+	elWordsRepo := elrepositories.NewWordsRepo(elClient.Client)
 	usersRepo := postgresRepo.NewUsersRepo(pgClient)
 	collectionsRepo := postgresRepo.NewCollectionsRepo(pgClient)
 

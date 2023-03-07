@@ -15,8 +15,7 @@ type AppConfig struct {
 }
 
 type ElasticConfig struct {
-	Host     string `yaml:"host"`
-	Port     string `yaml:"port"`
+	Url      string `yaml:"url"`
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
 }
@@ -101,17 +100,11 @@ func (p *Prod) GetEnvVariables() error {
 	Config.Salt = data
 
 	// elasticsearch
-	data, ok = os.LookupEnv("ES_HOST")
+	data, ok = os.LookupEnv("ES_URL")
 	if !ok {
 		fmt.Println("can`t get env")
 	}
-	Config.Elastic.Host = data
-
-	data, ok = os.LookupEnv("ES_PORT")
-	if !ok {
-		fmt.Println("can`t get env")
-	}
-	Config.Elastic.Port = data
+	Config.Elastic.Url = data
 
 	data, ok = os.LookupEnv("ES_USERNAME")
 	if !ok {
