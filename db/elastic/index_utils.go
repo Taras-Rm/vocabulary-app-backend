@@ -17,7 +17,7 @@ func (ec *ElasticClient) CreateVocabularyIndices() error {
 }
 
 func (ec *ElasticClient) createIndicesIfNotExists(indices ...IndexInterface) error {
-	client, err := ec.GetClient()
+	client, err := ec.GetConnection()
 	if err != nil {
 		return err
 	}
