@@ -4,6 +4,8 @@ import (
 	"errors"
 	"net/http"
 	"time"
+	"vacabulary/config"
+	"vacabulary/db/elastic"
 	"vacabulary/models"
 
 	"github.com/gin-gonic/gin"
@@ -55,6 +57,13 @@ func (a *App) createUser(ctx *gin.Context) {
 		Password:  input.Password,
 		CreatedAt: time.Now(),
 	})
+	if err != nil {
+		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	elClient := elastic.NewElasticClient(config.Config.Elastic)
+	err = elClient.CreateUserWordsIndices(user.Id)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

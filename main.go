@@ -30,16 +30,16 @@ func main() {
 	pgClient := postgres.NewPostgres(cfg.Postgres)
 
 	// createIndices
-	err := elClient.CreateVocabularyIndices()
-	if err != nil {
-		panic("can't create elastic indices")
-	}
+	// err := elClient.CreateVocabularyIndices()
+	// if err != nil {
+	// 	panic("can't create elastic indices")
+	// }
 
 	tokenService := token.NewTokenService(cfg.Salt)
 	translatorManager := translator.NewTranslatorManager(cfg.AWS)
 	s3Manager := s3.NewS3Manager(cfg.AWS)
 
-	elWordsRepo := elrepositories.NewWordsRepo(elClient.Client)
+	elWordsRepo := elrepositories.NewCollectionWordsRepo(elClient.Client)
 	usersRepo := postgresRepo.NewUsersRepo(pgClient)
 	collectionsRepo := postgresRepo.NewCollectionsRepo(pgClient)
 

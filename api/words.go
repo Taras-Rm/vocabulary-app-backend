@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 	"vacabulary/models"
+	"vacabulary/repositories/elastic"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,10 +16,10 @@ func (a *App) InjectWords(gr *gin.Engine) {
 	words.POST("", a.createWord)
 	words.POST("/bulk", a.createWords)
 
-	words.GET(":id", a.getWord)
-	words.DELETE(":id", a.deleteWord)
+	words.GET(":id/collection/:collectionId", a.getWord)
+	words.DELETE(":id/collection/:collectionId", a.deleteWord)
 	words.GET("/collection/:collectionId", a.getAllWords)
-	words.PUT(":id", a.updateWord)
+	words.PUT(":id/collection/:collectionId", a.updateWord)
 
 	words.POST("/translate", a.translateWord)
 }
@@ -39,8 +40,10 @@ func (a *App) createWord(ctx *gin.Context) {
 		return
 	}
 
+	user := a.getContextUser(ctx)
+
 	// check: such origin already esists in selected collection or not
-	word, err := a.wordRepo.Get(input.Word, input.CollectionId)
+	word, err := a.wordRepo.Get(input.Word, elastic.CollectionWordsOperationCtx{CollectionId: input.CollectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -58,7 +61,7 @@ func (a *App) createWord(ctx *gin.Context) {
 		PartOfSpeech: input.PartOfSpeech,
 		Scentance:    input.Scentance,
 		CollectionId: input.CollectionId,
-	})
+	}, elastic.CollectionWordsOperationCtx{CollectionId: input.CollectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -94,7 +97,9 @@ func (a *App) getAllWords(ctx *gin.Context) {
 		return
 	}
 
-	words, totalWords, err := a.wordRepo.GetAll(uint64(collectionId), uint64(size), uint64(page))
+	user := a.getContextUser(ctx)
+
+	words, totalWords, err := a.wordRepo.GetAll(uint64(size), uint64(page), elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -137,7 +142,21 @@ func (a *App) getWord(ctx *gin.Context) {
 		return
 	}
 
-	word, err := a.wordRepo.GetById(id)
+	collectionIdStr := ctx.Param("collectionId")
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
+		return
+	}
+
+	collectionId, err := strconv.Atoi(collectionIdStr)
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
+		return
+	}
+
+	user := a.getContextUser(ctx)
+
+	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -177,7 +196,21 @@ func (a *App) updateWord(ctx *gin.Context) {
 		return
 	}
 
-	word, err := a.wordRepo.GetById(id)
+	collectionIdStr := ctx.Param("collectionId")
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
+		return
+	}
+
+	collectionId, err := strconv.Atoi(collectionIdStr)
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
+		return
+	}
+
+	user := a.getContextUser(ctx)
+
+	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -192,7 +225,7 @@ func (a *App) updateWord(ctx *gin.Context) {
 		Scentance:    input.Scentance,
 		CreatedAt:    time.Now(),
 		CollectionId: word.CollectionId,
-	})
+	}, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -211,7 +244,21 @@ func (a *App) deleteWord(ctx *gin.Context) {
 		return
 	}
 
-	err := a.wordRepo.DeleteById(id)
+	collectionIdStr := ctx.Param("collectionId")
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
+		return
+	}
+
+	collectionId, err := strconv.Atoi(collectionIdStr)
+	if id == "" {
+		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
+		return
+	}
+
+	user := a.getContextUser(ctx)
+
+	err = a.wordRepo.DeleteById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -248,8 +295,10 @@ func (a *App) createWords(ctx *gin.Context) {
 		wordsWord = append(wordsWord, w.Word)
 	}
 
+	user := a.getContextUser(ctx)
+
 	// check: such words already esists or not
-	words, err := a.wordRepo.GetByWords(wordsWord, input.CollectionId)
+	words, err := a.wordRepo.GetByWords(wordsWord, elastic.CollectionWordsOperationCtx{CollectionId: uint64(input.CollectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -272,7 +321,7 @@ func (a *App) createWords(ctx *gin.Context) {
 	}
 
 	// create words in elastic too
-	err = a.wordRepo.BulkCreate(words)
+	err = a.wordRepo.BulkCreate(words, elastic.CollectionWordsOperationCtx{CollectionId: uint64(input.CollectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

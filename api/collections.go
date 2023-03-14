@@ -8,8 +8,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"vacabulary/config"
+	el "vacabulary/db/elastic"
 	"vacabulary/models"
 	pdfgenerator "vacabulary/pkg/pdfGenerator"
+	"vacabulary/repositories/elastic"
 
 	"github.com/gin-gonic/gin"
 )
@@ -85,6 +88,13 @@ func (a *App) createCollection(ctx *gin.Context) {
 		return
 	}
 
+	elClient := el.NewElasticClient(config.Config.Elastic)
+	err = elClient.CreateCollectionAliases(user.Id, collection.Id)
+	if err != nil {
+		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"message":    "success",
 		"collection": collection,
@@ -106,7 +116,7 @@ func (a *App) getAllCollections(ctx *gin.Context) {
 
 	var collectionsWithWords []models.Collection
 	for _, c := range collections {
-		words, _, err := a.wordRepo.GetAll(c.Id, 0, 0)
+		words, _, err := a.wordRepo.GetAll(0, 0, elastic.CollectionWordsOperationCtx{UserId: user.Id, CollectionId: c.Id})
 		if err != nil {
 			continue
 		}
@@ -145,7 +155,7 @@ func (a *App) generatePdfCollection(ctx *gin.Context) {
 		return
 	}
 
-	words, _, err := a.wordRepo.GetAll(uint64(id), 0, 0)
+	words, _, err := a.wordRepo.GetAll(0, 0, elastic.CollectionWordsOperationCtx{UserId: user.Id, CollectionId: uint64(id)})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -307,7 +317,9 @@ func (a *App) searchWordsInCollection(ctx *gin.Context) {
 		return
 	}
 
-	words, err := a.wordRepo.Search(uint64(id), *searchSettings)
+	user := a.getContextUser(ctx)
+
+	words, err := a.wordRepo.Search(*searchSettings, elastic.CollectionWordsOperationCtx{UserId: user.Id, CollectionId: uint64(id)})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

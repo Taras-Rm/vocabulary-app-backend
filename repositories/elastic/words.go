@@ -3,6 +3,7 @@ package elastic
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"time"
 	myElastic "vacabulary/db/elastic"
@@ -11,25 +12,25 @@ import (
 	"github.com/olivere/elastic/v7"
 )
 
-type wordsRepo struct {
+type collectionWordsRepo struct {
 	client *elastic.Client
 }
 
 type Words interface {
-	Create(word models.Word) error
-	BulkCreate(word []models.Word) error
-	Update(word models.Word) error
-	DeleteById(id string) error
-	Get(origin string, collectionId uint64) (*models.Word, error)
-	GetById(origin string) (*models.Word, error)
-	GetByTranslation(translation string) (*models.Word, error)
-	GetAll(collectionId uint64, size, page uint64) ([]models.Word, uint64, error)
-	GetByWords(words []string, collectionId uint64) ([]models.Word, error)
-	Search(collectionId uint64, settings models.SearchSettings) ([]models.Word, error)
+	Create(word models.Word, wordsCtx CollectionWordsOperationCtx) error
+	BulkCreate(word []models.Word, wordsCtx CollectionWordsOperationCtx) error
+	Update(word models.Word, wordsCtx CollectionWordsOperationCtx) error
+	DeleteById(id string, wordsCtx CollectionWordsOperationCtx) error
+	Get(origin string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error)
+	GetById(origin string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error)
+	GetByTranslation(translation string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error)
+	GetAll(size, page uint64, wordsCtx CollectionWordsOperationCtx) ([]models.Word, uint64, error)
+	GetByWords(words []string, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
+	Search(settings models.SearchSettings, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
 }
 
-func NewWordsRepo(client *elastic.Client) Words {
-	return &wordsRepo{
+func NewCollectionWordsRepo(client *elastic.Client) Words {
+	return &collectionWordsRepo{
 		client: client,
 	}
 }
@@ -43,8 +44,16 @@ type ElasticWord struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-func (r *wordsRepo) Create(word models.Word) error {
-	index := r.getIndex()
+type CollectionWordsOperationCtx struct {
+	UserId       uint64
+	CollectionId uint64
+}
+
+func (r *collectionWordsRepo) Create(word models.Word, wordsCtx CollectionWordsOperationCtx) error {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return err
+	}
 
 	elasticWord := ElasticWord{
 		CollectionId: word.CollectionId,
@@ -56,7 +65,7 @@ func (r *wordsRepo) Create(word models.Word) error {
 	}
 
 	ctx := context.Background()
-	_, err := r.client.Index().Index(index.GetName()).BodyJson(elasticWord).Refresh("true").Do(ctx)
+	_, err = r.client.Index().Index(index.GetName()).BodyJson(elasticWord).Refresh("true").Do(ctx)
 	if err != nil {
 		return err
 	}
@@ -64,8 +73,11 @@ func (r *wordsRepo) Create(word models.Word) error {
 	return nil
 }
 
-func (r *wordsRepo) BulkCreate(words []models.Word) error {
-	index := r.getIndex()
+func (r *collectionWordsRepo) BulkCreate(words []models.Word, wordsCtx CollectionWordsOperationCtx) error {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return err
+	}
 
 	elasticWords := []ElasticWord{}
 	for _, word := range words {
@@ -90,7 +102,7 @@ func (r *wordsRepo) BulkCreate(words []models.Word) error {
 	}
 
 	ctx := context.Background()
-	_, err := bulk.Refresh("true").Do(ctx)
+	_, err = bulk.Refresh("true").Do(ctx)
 	if err != nil {
 		return err
 	}
@@ -98,11 +110,14 @@ func (r *wordsRepo) BulkCreate(words []models.Word) error {
 	return nil
 }
 
-func (r *wordsRepo) DeleteById(id string) error {
-	index := r.getIndex()
+func (r *collectionWordsRepo) DeleteById(id string, wordsCtx CollectionWordsOperationCtx) error {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return err
+	}
 
 	ctx := context.Background()
-	_, err := r.client.Delete().Index(index.GetName()).Refresh("true").Id(id).Do(ctx)
+	_, err = r.client.Delete().Index(index.GetName()).Refresh("true").Id(id).Do(ctx)
 	if err != nil {
 		return err
 	}
@@ -110,16 +125,19 @@ func (r *wordsRepo) DeleteById(id string) error {
 	return nil
 }
 
-func (r *wordsRepo) Get(word string, collectionId uint64) (*models.Word, error) {
-	index := r.getIndex()
+func (r *collectionWordsRepo) Get(word string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
 
 	query := elastic.NewBoolQuery() // ("word", word)
 	q1 := elastic.NewMatchQuery("word", word)
-	q2 := elastic.NewMatchQuery("collection_id", collectionId)
+	// q2 := elastic.NewMatchQuery("collection_id", collectionId)
 
-	query.Must(q1, q2)
+	query.Must(q1)
 
 	searchResult, err := r.client.Search().Index(index.GetName()).Query(query).Do(ctx)
 	if err != nil {
@@ -146,8 +164,11 @@ func (r *wordsRepo) Get(word string, collectionId uint64) (*models.Word, error) 
 	return findedWord, nil
 }
 
-func (r *wordsRepo) GetById(id string) (*models.Word, error) {
-	index := r.getIndex()
+func (r *collectionWordsRepo) GetById(id string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
 
@@ -175,8 +196,11 @@ func (r *wordsRepo) GetById(id string) (*models.Word, error) {
 	return &findedWord, nil
 }
 
-func (r *wordsRepo) GetByTranslation(translation string) (*models.Word, error) {
-	index := r.getIndex()
+func (r *collectionWordsRepo) GetByTranslation(translation string, wordsCtx CollectionWordsOperationCtx) (*models.Word, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
 
@@ -210,22 +234,24 @@ func (r *wordsRepo) GetByTranslation(translation string) (*models.Word, error) {
 	return &words[0], nil
 }
 
-func (r *wordsRepo) GetAll(collectionId uint64, size, page uint64) ([]models.Word, uint64, error) {
-	index := r.getIndex()
+func (r *collectionWordsRepo) GetAll(size, page uint64, wordsCtx CollectionWordsOperationCtx) ([]models.Word, uint64, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	ctx := context.Background()
 
-	query := elastic.NewMatchQuery("collection_id", collectionId)
+	// query := elastic.NewMatchQuery("collection_id", collectionId)
 
 	var searchResult *elastic.SearchResult
-	var err error
 
 	if size == 0 && page == 0 {
 		// get all words
-		searchResult, err = r.client.Search().Index(index.GetName()).Query(query).Size(1000).Do(ctx)
+		searchResult, err = r.client.Search().Index(index.GetName()).Size(1000).Do(ctx)
 	} else {
 		from := size * (page - 1)
-		searchResult, err = r.client.Search().Index(index.GetName()).Query(query).Size(int(size)).From(int(from)).Do(ctx)
+		searchResult, err = r.client.Search().Index(index.GetName()).Size(int(size)).From(int(from)).Do(ctx)
 	}
 	if err != nil {
 		return nil, 0, err
@@ -255,8 +281,11 @@ func (r *wordsRepo) GetAll(collectionId uint64, size, page uint64) ([]models.Wor
 	return words, totalHits, nil
 }
 
-func (r *wordsRepo) Update(word models.Word) error {
-	index := r.getIndex()
+func (r *collectionWordsRepo) Update(word models.Word, wordsCtx CollectionWordsOperationCtx) error {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return err
+	}
 
 	elasticWord := ElasticWord{
 		CollectionId: word.CollectionId,
@@ -268,7 +297,7 @@ func (r *wordsRepo) Update(word models.Word) error {
 	}
 
 	ctx := context.Background()
-	_, err := r.client.Update().Index(index.GetName()).Refresh("true").Doc(elasticWord).Id(word.Id).Do(ctx)
+	_, err = r.client.Update().Index(index.GetName()).Refresh("true").Doc(elasticWord).Id(word.Id).Do(ctx)
 	if err != nil {
 		return err
 	}
@@ -276,8 +305,11 @@ func (r *wordsRepo) Update(word models.Word) error {
 	return nil
 }
 
-func (r *wordsRepo) GetByWords(words []string, collectionId uint64) ([]models.Word, error) {
-	index := r.getIndex()
+func (r *collectionWordsRepo) GetByWords(words []string, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, err
+	}
 
 	ctx := context.Background()
 
@@ -289,9 +321,9 @@ func (r *wordsRepo) GetByWords(words []string, collectionId uint64) ([]models.Wo
 	query := elastic.NewBoolQuery()
 
 	q1 := elastic.NewTermsQuery("word", wordsForSearch...)
-	q2 := elastic.NewMatchQuery("collection_id", collectionId)
+	// q2 := elastic.NewMatchQuery("collection_id", collectionId)
 
-	query.Must(q1, q2)
+	query.Must(q1)
 
 	searchResult, err := r.client.Search().Index(index.GetName()).Query(query).Do(ctx)
 	if err != nil {
@@ -321,17 +353,19 @@ func (r *wordsRepo) GetByWords(words []string, collectionId uint64) ([]models.Wo
 	return findedWords, nil
 }
 
-func (r *wordsRepo) Search(collectionId uint64, settings models.SearchSettings) ([]models.Word, error) {
-	index := r.getIndex()
-
+func (r *collectionWordsRepo) Search(settings models.SearchSettings, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error) {
+	index, err := r.getIndex(wordsCtx)
+	if err != nil {
+		return nil, err
+	}
 	ctx := context.Background()
 
 	query := elastic.NewBoolQuery()
 
 	q1 := elastic.NewWildcardQuery(settings.SearchBy, "*"+settings.TextForSearch+"*")
-	q2 := elastic.NewMatchQuery("collection_id", collectionId)
+	// q2 := elastic.NewMatchQuery("collection_id", collectionId)
 
-	query.Must(q1, q2)
+	query.Must(q1)
 
 	if len(settings.PartsOfSpeech) != 0 {
 		partsOfSpeechArr := make([]interface{}, len(settings.PartsOfSpeech))
@@ -373,8 +407,11 @@ func (r *wordsRepo) Search(collectionId uint64, settings models.SearchSettings) 
 	return words, nil
 }
 
-func (r *wordsRepo) getIndex() *myElastic.WordsIndex {
-	index := myElastic.NewWordsIndex()
+func (r *collectionWordsRepo) getIndex(ctx CollectionWordsOperationCtx) (*myElastic.CollectionWordsIndex, error) {
+	index, err := myElastic.NewCollectionWordsIndex(myElastic.CollectionWordsIndexContext{UserID: ctx.UserId, CollectionID: ctx.CollectionId})
+	if err != nil {
+		return nil, errors.New("failed to get collection words index")
+	}
 
-	return index
+	return index, nil
 }
