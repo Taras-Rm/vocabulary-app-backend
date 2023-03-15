@@ -23,7 +23,7 @@ func NewPdfGenerator() PdfGenerator {
 	return PdfGenerator{pdf: instance}
 }
 
-func GenerateCollectionPdf(contents [][]string, tableName, pathToFile string) ([]byte, error) {
+func GenerateCollectionPdf(contents [][]string, tableName string) ([]byte, error) {
 	instance := NewPdfGenerator()
 
 	instance.pdf.SetPageMargins(20, 20, 20)

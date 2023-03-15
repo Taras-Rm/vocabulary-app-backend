@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -164,34 +163,15 @@ func (a *App) generatePdfCollection(ctx *gin.Context) {
 		contents = append(contents, row)
 	}
 
-	pathToFile := "api/" + collection.Name + ".pdf"
-
-	file, err := pdfgenerator.GenerateCollectionPdf(contents, collection.Name, pathToFile)
+	file, err := pdfgenerator.GenerateCollectionPdf(contents, collection.Name)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	filePdf := bytes.NewReader(file)
-
-	key := fmt.Sprintf("%d/%s.pdf", user.Id, collection.Name)
-	link, err := a.s3Manager.StorePdfFile(key, filePdf)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	collection.PdfFileUrl = link
-
-	_, err = a.collectionRepo.Update(collection)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	ctx.JSON(http.StatusOK, map[string]interface{}{
-		"message": "success",
-	})
+	ctx.Writer.Header().Add("Content-Disposition", fmt.Sprintf("attachment; filename=%s.pdf", collection.Name))
+	ctx.Writer.Header().Add("Content-type", "application/pdf")
+	ctx.Writer.Write(file)
 }
 
 type getCollectionResponse struct {

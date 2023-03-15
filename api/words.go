@@ -16,10 +16,10 @@ func (a *App) InjectWords(gr *gin.Engine) {
 	words.POST("", a.createWord)       // OK
 	words.POST("/bulk", a.createWords) // OK
 
-	words.GET(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.getWord)       // OK
-	words.DELETE(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.deleteWord) // OK
-	words.GET("/collection/:collectionId", a.idParam("collectionId"), a.getAllWords)                       // OK
-	words.PUT(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.updateWord)    // OK
+	words.GET(":id/collection/:collectionId", a.idParam("collectionId"), a.getWord)       // OK
+	words.DELETE(":id/collection/:collectionId", a.idParam("collectionId"), a.deleteWord) // OK
+	words.GET("/collection/:collectionId", a.idParam("collectionId"), a.getAllWords)      // OK
+	words.PUT(":id/collection/:collectionId", a.idParam("collectionId"), a.updateWord)    // OK
 
 	words.POST("/translate", a.translateWord)
 }
