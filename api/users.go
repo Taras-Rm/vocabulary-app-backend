@@ -18,10 +18,10 @@ const (
 func (a *App) InjectUsers(gr *gin.Engine) {
 	words := gr.Group("/user")
 
-	words.POST("", a.createUser)
-	words.GET("/me", a.authorizeRequest, a.getMe)
+	words.POST("/registration", a.createUser)     // OK
+	words.GET("/me", a.authorizeRequest, a.getMe) // OK
 
-	words.POST("/login", a.loginUser)
+	words.POST("/login", a.loginUser) // OK
 }
 
 type createUserInp struct {

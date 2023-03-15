@@ -13,13 +13,13 @@ import (
 
 func (a *App) InjectWords(gr *gin.Engine) {
 	words := gr.Group("/word", a.authorizeRequest)
-	words.POST("", a.createWord)
-	words.POST("/bulk", a.createWords)
+	words.POST("", a.createWord)       // OK
+	words.POST("/bulk", a.createWords) // OK
 
-	words.GET(":id/collection/:collectionId", a.getWord)
-	words.DELETE(":id/collection/:collectionId", a.deleteWord)
-	words.GET("/collection/:collectionId", a.getAllWords)
-	words.PUT(":id/collection/:collectionId", a.updateWord)
+	words.GET(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.getWord)       // OK
+	words.DELETE(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.deleteWord) // OK
+	words.GET("/collection/:collectionId", a.idParam("collectionId"), a.getAllWords)                       // OK
+	words.PUT(":id/collection/:collectionId", a.idParam("id"), a.idParam("collectionId"), a.updateWord)    // OK
 
 	words.POST("/translate", a.translateWord)
 }
@@ -78,15 +78,9 @@ type getAllWordsResponse struct {
 }
 
 func (a *App) getAllWords(ctx *gin.Context) {
-	collectionIdStr := ctx.Param("collectionId")
-	if collectionIdStr == "" {
+	collectionId := ctx.GetUint64("collectionId")
+	if collectionId == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
-		return
-	}
-
-	collectionId, err := strconv.Atoi(collectionIdStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -99,7 +93,7 @@ func (a *App) getAllWords(ctx *gin.Context) {
 
 	user := a.getContextUser(ctx)
 
-	words, totalWords, err := a.wordRepo.GetAll(uint64(size), uint64(page), elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
+	words, totalWords, err := a.wordRepo.GetAll(uint64(size), uint64(page), elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -142,21 +136,15 @@ func (a *App) getWord(ctx *gin.Context) {
 		return
 	}
 
-	collectionIdStr := ctx.Param("collectionId")
-	if id == "" {
+	collectionId := ctx.GetUint64("collectionId")
+	if collectionId == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
-		return
-	}
-
-	collectionId, err := strconv.Atoi(collectionIdStr)
-	if id == "" {
-		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
 		return
 	}
 
 	user := a.getContextUser(ctx)
 
-	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
+	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -196,21 +184,15 @@ func (a *App) updateWord(ctx *gin.Context) {
 		return
 	}
 
-	collectionIdStr := ctx.Param("collectionId")
-	if id == "" {
+	collectionId := ctx.GetUint64("collectionId")
+	if collectionId == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
-		return
-	}
-
-	collectionId, err := strconv.Atoi(collectionIdStr)
-	if id == "" {
-		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
 		return
 	}
 
 	user := a.getContextUser(ctx)
 
-	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
+	word, err := a.wordRepo.GetById(id, elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -225,7 +207,7 @@ func (a *App) updateWord(ctx *gin.Context) {
 		Scentance:    input.Scentance,
 		CreatedAt:    time.Now(),
 		CollectionId: word.CollectionId,
-	}, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
+	}, elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -244,21 +226,15 @@ func (a *App) deleteWord(ctx *gin.Context) {
 		return
 	}
 
-	collectionIdStr := ctx.Param("collectionId")
-	if id == "" {
+	collectionId := ctx.GetUint64("collectionId")
+	if collectionId == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get collection id").Error())
-		return
-	}
-
-	collectionId, err := strconv.Atoi(collectionIdStr)
-	if id == "" {
-		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not convert collection id").Error())
 		return
 	}
 
 	user := a.getContextUser(ctx)
 
-	err = a.wordRepo.DeleteById(id, elastic.CollectionWordsOperationCtx{CollectionId: uint64(collectionId), UserId: user.Id})
+	err := a.wordRepo.DeleteById(id, elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 	"vacabulary/config"
@@ -24,14 +23,14 @@ var (
 func (a *App) InjectCollections(gr *gin.Engine) {
 	collections := gr.Group("/collection", a.authorizeRequest)
 
-	collections.POST("", a.createCollection)
-	collections.GET("/all", a.getAllCollections)
-	collections.GET(":id", a.getCollection)
-	collections.PUT(":id", a.updateCollection)
-	collections.DELETE(":id", a.deleteCollection)
-	collections.GET(":id/search", a.searchWordsInCollection)
+	collections.POST("", a.createCollection)                                  // OK
+	collections.GET("/all", a.getAllCollections)                              // OK
+	collections.GET(":id", a.idParam("id"), a.getCollection)                  // OK
+	collections.PUT(":id", a.idParam("id"), a.updateCollection)               // OK
+	collections.DELETE(":id", a.idParam("id"), a.deleteCollection)            // OK
+	collections.GET(":id/search", a.idParam("id"), a.searchWordsInCollection) // OK
 
-	collections.POST(":id/generatePdf", a.generatePdfCollection)
+	collections.POST(":id/generatePdf", a.idParam("id"), a.generatePdfCollection)
 }
 
 type createCollectionInp struct {
@@ -136,20 +135,15 @@ func (a *App) getAllCollections(ctx *gin.Context) {
 }
 
 func (a *App) generatePdfCollection(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	if idStr == "" {
+	id := ctx.GetUint64("id")
+	if id == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get id").Error())
-		return
-	}
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	user := a.getContextUser(ctx)
 
-	collection, err := a.collectionRepo.GetById(uint64(id))
+	collection, err := a.collectionRepo.GetById(id)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -205,18 +199,13 @@ type getCollectionResponse struct {
 }
 
 func (a *App) getCollection(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	if idStr == "" {
+	id := ctx.GetUint64("id")
+	if id == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get id").Error())
 		return
 	}
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
 
-	collection, err := a.collectionRepo.GetById(uint64(id))
+	collection, err := a.collectionRepo.GetById(id)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -232,27 +221,21 @@ type updateCollectionInp struct {
 }
 
 func (a *App) updateCollection(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	if idStr == "" {
+	id := ctx.GetUint64("id")
+	if id == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get id").Error())
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	var input updateCollectionInp
-	err = ctx.BindJSON(&input)
+	err := ctx.BindJSON(&input)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	_, err = a.collectionRepo.Update(&models.Collection{
-		Id:   uint64(id),
+		Id:   id,
 		Name: input.Name,
 	})
 	if err != nil {
@@ -266,19 +249,13 @@ func (a *App) updateCollection(ctx *gin.Context) {
 }
 
 func (a *App) deleteCollection(ctx *gin.Context) {
-	idStr := ctx.Param("id")
-	if idStr == "" {
+	id := ctx.GetUint64("id")
+	if id == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get id").Error())
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	err = a.collectionRepo.DeleteById(uint64(id))
+	err := a.collectionRepo.DeleteById(id)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -306,20 +283,15 @@ func (a *App) searchWordsInCollection(ctx *gin.Context) {
 		return
 	}
 
-	idStr := ctx.Param("id")
-	if idStr == "" {
+	id := ctx.GetUint64("id")
+	if id == 0 {
 		newErrorResponse(ctx, http.StatusBadRequest, errors.New("can not get id").Error())
-		return
-	}
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	user := a.getContextUser(ctx)
 
-	words, err := a.wordRepo.Search(*searchSettings, elastic.CollectionWordsOperationCtx{UserId: user.Id, CollectionId: uint64(id)})
+	words, err := a.wordRepo.Search(*searchSettings, elastic.CollectionWordsOperationCtx{UserId: user.Id, CollectionId: id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return

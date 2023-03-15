@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"vacabulary/models"
 
@@ -57,4 +58,19 @@ func (a *App) getContextUser(ctx *gin.Context) *models.User {
 	}
 
 	return user
+}
+
+func (a *App) idParam(param string) func(ctx *gin.Context) {
+	return func(ctx *gin.Context) {
+		idStr := ctx.Param(param)
+		id, err := strconv.ParseUint(idStr, 10, 64)
+		if err != nil {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, "id not valid")
+			return
+		}
+
+		ctx.Set(param, id)
+
+		ctx.Next()
+	}
 }
