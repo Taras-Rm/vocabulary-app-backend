@@ -10,36 +10,33 @@ import (
 type CollectionModel struct {
 	tableName struct{} `pg:"collections"`
 
-	ID         uint64    `pg:"id"`
-	Name       string    `pg:"name"`
-	OwnerID    uint64    `pg:"owner_id"`
-	CreatedAt  time.Time `pg:"created_at"`
-	LangFrom   string    `pg:"lang_from"`
-	LangTo     string    `pg:"lang_to"`
-	PdfFileUrl string    `pg:"pdf_file_url"`
+	ID        uint64    `pg:"id"`
+	Name      string    `pg:"name"`
+	OwnerID   uint64    `pg:"owner_id"`
+	CreatedAt time.Time `pg:"created_at"`
+	LangFrom  string    `pg:"lang_from"`
+	LangTo    string    `pg:"lang_to"`
 }
 
 func (u *CollectionModel) FromModel() *models.Collection {
 	return &models.Collection{
-		Id:         u.ID,
-		Name:       u.Name,
-		OwnerId:    u.OwnerID,
-		CreatedAt:  u.CreatedAt,
-		PdfFileUrl: u.PdfFileUrl,
-		LangFrom:   u.LangFrom,
-		LangTo:     u.LangTo,
+		Id:        u.ID,
+		Name:      u.Name,
+		OwnerId:   u.OwnerID,
+		CreatedAt: u.CreatedAt,
+		LangFrom:  u.LangFrom,
+		LangTo:    u.LangTo,
 	}
 }
 
 func ToCollectionModel(u models.Collection) *CollectionModel {
 	return &CollectionModel{
-		ID:         u.Id,
-		Name:       u.Name,
-		OwnerID:    u.OwnerId,
-		CreatedAt:  u.CreatedAt,
-		PdfFileUrl: u.PdfFileUrl,
-		LangFrom:   u.LangFrom,
-		LangTo:     u.LangTo,
+		ID:        u.Id,
+		Name:      u.Name,
+		OwnerID:   u.OwnerId,
+		CreatedAt: u.CreatedAt,
+		LangFrom:  u.LangFrom,
+		LangTo:    u.LangTo,
 	}
 }
 
@@ -121,7 +118,7 @@ func (r *collectionRepo) GetByName(name string) (*models.Collection, error) {
 func (r *collectionRepo) Update(collection *models.Collection) (*models.Collection, error) {
 	model := ToCollectionModel(*collection)
 
-	_, err := r.db.Model(model).Where("id=?", model.ID).Column("name", "pdf_file_url").Update()
+	_, err := r.db.Model(model).Where("id=?", model.ID).Column("name").Update()
 	if err != nil {
 		if err == pg.ErrNoRows {
 			return nil, nil

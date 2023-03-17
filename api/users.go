@@ -22,6 +22,10 @@ func (a *App) InjectUsers(gr *gin.Engine) {
 	words.GET("/me", a.authorizeRequest, a.getMe) // OK
 
 	words.POST("/login", a.loginUser) // OK
+
+	settings := words.Group("/settings", a.authorizeRequest)
+
+	settings.PUT("/language", a.updateUserLanguage)
 }
 
 type createUserInp struct {
@@ -128,5 +132,31 @@ func (a *App) getMe(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, map[string]interface{}{
 		"user": user,
+	})
+}
+
+type updateUserLanguageInp struct {
+	Language string `json:"language"`
+}
+
+func (a *App) updateUserLanguage(ctx *gin.Context) {
+	var input updateUserLanguageInp
+	err := ctx.BindJSON(&input)
+	if err != nil {
+		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user := a.getContextUser(ctx)
+
+	err = a.userRepo.UpdateUserLanguage(input.Language, user.Id)
+	if err != nil {
+		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.JSON(http.StatusOK, map[string]interface{}{
+		"message":  "success",
+		"language": input.Language,
 	})
 }
