@@ -27,16 +27,20 @@ type UserSettingsModel struct {
 }
 
 func (u *UserModel) FromModel() models.User {
-	settings := u.Settings.FromModel()
-
-	return models.User{
+	user := models.User{
 		Id:        u.ID,
 		Name:      u.Name,
 		Password:  u.Password,
 		Email:     u.Email,
 		CreatedAt: u.CreatedAt,
-		Settings:  &settings,
 	}
+
+	if u.Settings != nil {
+		s := u.Settings.FromModel()
+		user.Settings = &s
+	}
+
+	return user
 }
 
 func (u *UserSettingsModel) FromModel() models.UserSettings {
