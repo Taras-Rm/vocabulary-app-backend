@@ -248,10 +248,10 @@ func (r *collectionWordsRepo) GetAll(size, page uint64, wordsCtx CollectionWords
 
 	if size == 0 && page == 0 {
 		// get all words
-		searchResult, err = r.client.Search().Index(index.GetName()).Size(1000).Do(ctx)
+		searchResult, err = r.client.Search().Index(index.GetName()).Sort("created_at", false).Size(1000).Do(ctx)
 	} else {
 		from := size * (page - 1)
-		searchResult, err = r.client.Search().Index(index.GetName()).Size(int(size)).From(int(from)).Do(ctx)
+		searchResult, err = r.client.Search().Index(index.GetName()).Sort("created_at", false).Size(int(size)).From(int(from)).Do(ctx)
 	}
 	if err != nil {
 		return nil, 0, err

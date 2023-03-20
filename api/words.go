@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 	"vacabulary/models"
 	"vacabulary/repositories/elastic"
 
@@ -205,7 +204,7 @@ func (a *App) updateWord(ctx *gin.Context) {
 		Translation:  input.Translation,
 		PartOfSpeech: input.PartOfSpeech,
 		Scentance:    input.Scentance,
-		CreatedAt:    time.Now(),
+		CreatedAt:    word.CreatedAt,
 		CollectionId: word.CollectionId,
 	}, elastic.CollectionWordsOperationCtx{CollectionId: collectionId, UserId: user.Id})
 	if err != nil {
