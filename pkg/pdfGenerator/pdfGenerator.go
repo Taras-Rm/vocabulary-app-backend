@@ -1,96 +1,91 @@
 package pdfgenerator
 
 import (
-	"github.com/johnfercher/maroto/pkg/color"
-	"github.com/johnfercher/maroto/pkg/consts"
-	"github.com/johnfercher/maroto/pkg/pdf"
-	"github.com/johnfercher/maroto/pkg/props"
+	"fmt"
+	"os"
+
+	"github.com/jung-kurt/gofpdf"
 )
 
 type PdfGenerator struct {
-	pdf pdf.Maroto
+	pdf        *gofpdf.Fpdf
+	tr         func(string) string
+	outputPath string
 }
 
-func NewPdfGenerator() PdfGenerator {
-	instance := pdf.NewMaroto(consts.Portrait, consts.A4)
+func NewPdf() *PdfGenerator {
+	pwd, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-	instance.AddUTF8Font("CustomArial", consts.Normal, "pkg/pdfGenerator/fonts/arial-unicode-ms.ttf")
-	instance.AddUTF8Font("CustomArial", consts.Italic, "pkg/pdfGenerator/fonts/arial-unicode-ms.ttf")
-	instance.AddUTF8Font("CustomArial", consts.Bold, "pkg/pdfGenerator/fonts/arial-unicode-ms.ttf")
-	instance.AddUTF8Font("CustomArial", consts.BoldItalic, "pkg/pdfGenerator/fonts/arial-unicode-ms.ttf")
-	instance.SetDefaultFontFamily("CustomArial")
+	pdf := gofpdf.New("P", "mm", "A4", pwd+"/pkg/pdfGenerator/font")
 
-	return PdfGenerator{pdf: instance}
+	pdf.AddFont("Helvetica-1251", "", "helvetica_1251.json")
+	pdf.SetFont("Helvetica-1251", "", 14)
+
+	tr := pdf.UnicodeTranslatorFromDescriptor("cp1251")
+
+	outputPah := pwd + "/pkg/pdfGenerator/test.pdf"
+
+	return &PdfGenerator{pdf: pdf, tr: tr, outputPath: outputPah}
 }
 
 func GenerateCollectionPdf(contents [][]string, tableName string) ([]byte, error) {
-	instance := NewPdfGenerator()
+	headings := []string{"Word", "Translation"}
 
-	instance.pdf.SetPageMargins(20, 20, 20)
+	g := NewPdf()
 
-	instance.generateHeader()
+	g.pdf.AddPage()
 
-	instance.generateWordsList(contents, tableName)
+	widthOfCell := 100.0
 
-	res, err := instance.pdf.Output()
+	leftMargin := (210.0 - 2*widthOfCell) / 2
+	g.pdf.SetX(leftMargin)
+
+	g.generateWordsListTable(contents, headings, widthOfCell, leftMargin)
+
+	err := g.pdf.OutputFileAndClose(g.outputPath)
 	if err != nil {
 		return nil, err
 	}
 
-	return res.Bytes(), nil
-}
-
-func (p *PdfGenerator) generateHeader() {
-	p.pdf.RegisterHeader(func() {
-		p.pdf.Row(10, func() {
-			p.pdf.Col(12, func() {
-				p.pdf.Text("Vocabulary")
-			})
-		})
-	})
-}
-
-func (p *PdfGenerator) generateWordsList(contents [][]string, tableName string) {
-	tableHeadings := []string{"Word", "Translation"}
-	lightPurpleColor := color.Color{
-		Red:   210,
-		Green: 200,
-		Blue:  230,
+	bytes, err := g.prepareFile()
+	if err != nil {
+		return nil, err
 	}
 
-	p.pdf.SetBackgroundColor(color.Color{
-		Red:   3,
-		Green: 166,
-		Blue:  166,
-	})
+	return bytes, nil
+}
 
-	p.pdf.Row(10, func() {
-		p.pdf.Col(12, func() {
-			p.pdf.Text(tableName, props.Text{
-				Top:    2,
-				Size:   15,
-				Color:  color.NewWhite(),
-				Family: consts.Courier,
-				Style:  consts.Bold,
-				Align:  consts.Center,
-			})
-		})
-	})
+func (g *PdfGenerator) generateWordsListTable(contents [][]string, headings []string, cellWidth, leftMargin float64) {
+	g.pdf.SetFontSize(16)
+	for _, str := range headings {
+		g.pdf.CellFormat(cellWidth, 7, g.tr(str), "1", 0, "C", false, 0, "")
+	}
 
-	p.pdf.SetBackgroundColor(color.NewWhite())
+	g.pdf.Ln(-1)
 
-	p.pdf.TableList(tableHeadings, contents, props.TableList{
-		HeaderProp: props.TableListContent{
-			Size:      12,
-			GridSizes: []uint{6, 6},
-		},
-		ContentProp: props.TableListContent{
-			Size:      12,
-			GridSizes: []uint{6, 6},
-		},
-		Align:                consts.Left,
-		AlternatedBackground: &lightPurpleColor,
-		HeaderContentSpace:   2,
-		Line:                 false,
-	})
+	g.pdf.SetFontSize(14)
+	for _, c := range contents {
+		g.pdf.SetX(leftMargin)
+		g.pdf.CellFormat(cellWidth, 6, g.tr(c[0]), "1", 0, "", false, 0, "")
+		g.pdf.CellFormat(cellWidth, 6, g.tr(c[1]), "1", 0, "", false, 0, "")
+		g.pdf.Ln(-1)
+	}
+}
+
+func (g *PdfGenerator) prepareFile() ([]byte, error) {
+	bytes, err := os.ReadFile(g.outputPath)
+	if err != nil {
+		return nil, err
+	}
+
+	err = os.Remove(g.outputPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
 }
