@@ -1,6 +1,7 @@
 package api
 
 import (
+	"vacabulary/pkg/hasher"
 	"vacabulary/pkg/s3"
 	"vacabulary/pkg/token"
 	"vacabulary/pkg/translator"
@@ -18,9 +19,10 @@ type App struct {
 	tokenService      token.TokenService
 	translatorManager translator.TranslatorManager
 	s3Manager         s3.S3Manager
+	hasher            hasher.Hasher
 }
 
-func NewApp(userRepo postgres.Users, collectionRepo postgres.Collections, wordRepo elastic.Words, tokenService token.TokenService, translatorManager translator.TranslatorManager, s3Manager s3.S3Manager) App {
+func NewApp(userRepo postgres.Users, collectionRepo postgres.Collections, wordRepo elastic.Words, tokenService token.TokenService, translatorManager translator.TranslatorManager, s3Manager s3.S3Manager, hasher hasher.Hasher) App {
 	return App{
 		userRepo:       userRepo,
 		wordRepo:       wordRepo,
@@ -29,6 +31,7 @@ func NewApp(userRepo postgres.Users, collectionRepo postgres.Collections, wordRe
 		tokenService:      tokenService,
 		translatorManager: translatorManager,
 		s3Manager:         s3Manager,
+		hasher:            hasher,
 	}
 }
 

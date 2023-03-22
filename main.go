@@ -8,6 +8,7 @@ import (
 	"vacabulary/db/elastic"
 	"vacabulary/db/postgres"
 
+	"vacabulary/pkg/hasher"
 	"vacabulary/pkg/s3"
 	"vacabulary/pkg/token"
 	"vacabulary/pkg/translator"
@@ -29,15 +30,10 @@ func main() {
 	postgres.MigrateDB()
 	pgClient := postgres.NewPostgres(cfg.Postgres)
 
-	// createIndices
-	// err := elClient.CreateVocabularyIndices()
-	// if err != nil {
-	// 	panic("can't create elastic indices")
-	// }
-
 	tokenService := token.NewTokenService(cfg.Salt)
 	translatorManager := translator.NewTranslatorManager(cfg.AWS)
 	s3Manager := s3.NewS3Manager(cfg.AWS)
+	hasher := hasher.NewHasher(cfg.Hasher.Cost)
 
 	elWordsRepo := elrepositories.NewCollectionWordsRepo(elClient.Client)
 	usersRepo := postgresRepo.NewUsersRepo(pgClient)
@@ -59,7 +55,7 @@ func main() {
 		c.Next()
 	})
 
-	app := api.NewApp(usersRepo, collectionsRepo, elWordsRepo, *tokenService, translatorManager, s3Manager)
+	app := api.NewApp(usersRepo, collectionsRepo, elWordsRepo, *tokenService, translatorManager, s3Manager, hasher)
 
 	router.GET("/", func(ctx *gin.Context) {
 		ctx.JSON(http.StatusOK, "hello from api")

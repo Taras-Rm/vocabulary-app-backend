@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/spf13/viper"
 )
@@ -12,6 +13,7 @@ type AppConfig struct {
 	Postgres PostgresConfig `yaml:"postgres"`
 	Salt     string         `yaml:"salt"`
 	AWS      AWSConfig      `yaml:"aws"`
+	Hasher   Hasher         `yaml:"hasher"`
 }
 
 type ElasticConfig struct {
@@ -26,6 +28,10 @@ type PostgresConfig struct {
 	Database string `yaml:"database"`
 	Password string `yaml:"password"`
 	Host     string `yaml:"host"`
+}
+
+type Hasher struct {
+	Cost int `yaml:"cost"`
 }
 
 type AWSConfig struct {
@@ -117,6 +123,16 @@ func (p *Prod) GetEnvVariables() error {
 		fmt.Println("can`t get env")
 	}
 	Config.Elastic.Password = data
+
+	data, ok = os.LookupEnv("HS_HASH")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	dataN, err := strconv.Atoi(data)
+	if err != nil {
+		fmt.Println("can`t parse env variable")
+	}
+	Config.Hasher.Cost = dataN
 
 	return nil
 }

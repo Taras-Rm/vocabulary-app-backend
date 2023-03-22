@@ -54,11 +54,17 @@ func (a *App) createUser(ctx *gin.Context) {
 		return
 	}
 
+	hashedPassword, err := a.hasher.HashPasspord(input.Password)
+	if err != nil {
+		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	// create user
 	user, err = a.userRepo.Create(models.User{
 		Name:      input.Name,
 		Email:     input.Email,
-		Password:  input.Password,
+		Password:  hashedPassword,
 		CreatedAt: time.Now(),
 	})
 	if err != nil {
@@ -105,7 +111,8 @@ func (a *App) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	if user.Password != input.Password {
+	ok, err := a.hasher.CheckPasswordHash(input.Password, user.Password)
+	if !ok || err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("uncorrect credentials").Error())
 		return
 	}
