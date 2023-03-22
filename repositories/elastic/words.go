@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 	myElastic "vacabulary/db/elastic"
@@ -27,6 +28,7 @@ type Words interface {
 	GetAll(size, page uint64, wordsCtx CollectionWordsOperationCtx) ([]models.Word, uint64, error)
 	GetByWords(words []string, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
 	Search(settings models.SearchSettings, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
+	GetAllWordsCount(userIds []uint64) (int64, error)
 }
 
 func NewCollectionWordsRepo(client *elastic.Client) Words {
@@ -405,6 +407,28 @@ func (r *collectionWordsRepo) Search(settings models.SearchSettings, wordsCtx Co
 	}
 
 	return words, nil
+}
+
+func (r *collectionWordsRepo) GetAllWordsCount(userIds []uint64) (int64, error) {
+	var indices []string
+
+	for _, uId := range userIds {
+		index, err := r.getIndex(CollectionWordsOperationCtx{UserId: uId})
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		indices = append(indices, index.GetName())
+	}
+
+	ctx := context.Background()
+
+	countOfAllWords, err := r.client.Count().Index(indices...).Do(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return countOfAllWords, nil
 }
 
 func (r *collectionWordsRepo) getIndex(ctx CollectionWordsOperationCtx) (*myElastic.CollectionWordsIndex, error) {

@@ -39,4 +39,5 @@ func (a *App) AttachEndpoints(gr *gin.Engine) {
 	a.InjectWords(gr)
 	a.InjectUsers(gr)
 	a.InjectCollections(gr)
+	a.InjectStatistic(gr)
 }
