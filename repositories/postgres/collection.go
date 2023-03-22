@@ -74,7 +74,7 @@ func (r *collectionRepo) Create(collection models.Collection) (*models.Collectio
 func (r *collectionRepo) GetByOwnerId(ownerId uint64) ([]models.Collection, error) {
 	var collectionModels []CollectionModel
 
-	err := r.db.Model(&collectionModels).Where("owner_id=?", ownerId).Select()
+	err := r.db.Model(&collectionModels).Where("owner_id=?", ownerId).Order("created_at").Select()
 	if err != nil {
 		return nil, err
 	}

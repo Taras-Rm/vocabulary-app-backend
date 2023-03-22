@@ -16,3 +16,6 @@ aws:
   region: us-east-1
   accessId: CDSC
   secret: CSDCSDCSDCSDCDS
+
+hasher:
+  cost: 14
