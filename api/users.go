@@ -66,6 +66,7 @@ func (a *App) createUser(ctx *gin.Context) {
 		Email:     input.Email,
 		Password:  hashedPassword,
 		CreatedAt: time.Now(),
+		IsSuper:   false,
 	})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
