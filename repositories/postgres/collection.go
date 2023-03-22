@@ -51,6 +51,7 @@ type Collections interface {
 	GetByName(name string) (*models.Collection, error)
 	Update(collection *models.Collection) (*models.Collection, error)
 	DeleteById(id uint64) error
+	GetAll() ([]models.Collection, error)
 }
 
 func NewCollectionsRepo(db *pg.DB) Collections {
@@ -99,6 +100,24 @@ func (r *collectionRepo) GetById(id uint64) (*models.Collection, error) {
 
 	createdCollection := collection.FromModel()
 	return createdCollection, nil
+}
+
+func (r *collectionRepo) GetAll() ([]models.Collection, error) {
+	var collections []CollectionModel
+	err := r.db.Model(&collections).Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var collectionsRes []models.Collection
+	for _, c := range collections {
+		collectionsRes = append(collectionsRes, *c.FromModel())
+	}
+
+	return collectionsRes, nil
 }
 
 func (r *collectionRepo) GetByName(name string) (*models.Collection, error) {

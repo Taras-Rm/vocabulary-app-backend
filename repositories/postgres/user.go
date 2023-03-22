@@ -80,6 +80,7 @@ type Users interface {
 	Create(user models.User) (*models.User, error)
 	GetByEmail(email string) (*models.User, error)
 	GetById(id uint64) (*models.User, error)
+	GetAll() ([]models.User, error)
 
 	UpdateUserLanguage(language string, userId uint64) error
 }
@@ -135,6 +136,24 @@ func (r *userRepo) GetById(id uint64) (*models.User, error) {
 
 	createdUser := user.FromModel()
 	return &createdUser, nil
+}
+
+func (r *userRepo) GetAll() ([]models.User, error) {
+	var users []UserModel
+	err := r.db.Model(&users).Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var usersRes []models.User
+	for _, u := range users {
+		usersRes = append(usersRes, u.FromModel())
+	}
+
+	return usersRes, nil
 }
 
 func (r *userRepo) UpdateUserLanguage(language string, userId uint64) error {

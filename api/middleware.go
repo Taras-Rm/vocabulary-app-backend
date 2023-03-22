@@ -60,6 +60,17 @@ func (a *App) getContextUser(ctx *gin.Context) *models.User {
 	return user
 }
 
+func (a *App) superUser(ctx *gin.Context) {
+	user := a.getContextUser(ctx)
+
+	if !user.IsSuper {
+		ctx.AbortWithStatusJSON(http.StatusUnauthorized, errors.New("not super user").Error())
+		return
+	}
+
+	ctx.Next()
+}
+
 func (a *App) idParam(param string) func(ctx *gin.Context) {
 	return func(ctx *gin.Context) {
 		idStr := ctx.Param(param)
