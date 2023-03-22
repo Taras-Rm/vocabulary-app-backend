@@ -15,6 +15,7 @@ type UserModel struct {
 	Email     string `pg:"email"`
 	Password  string
 	CreatedAt time.Time          `pg:"created_at"`
+	IsSuper   bool               `pg:"is_super"`
 	Settings  *UserSettingsModel `pg:"rel:has-one"`
 }
 
@@ -33,6 +34,7 @@ func (u *UserModel) FromModel() models.User {
 		Password:  u.Password,
 		Email:     u.Email,
 		CreatedAt: u.CreatedAt,
+		IsSuper:   u.IsSuper,
 	}
 
 	if u.Settings != nil {
@@ -58,6 +60,7 @@ func ToUserModel(u models.User) *UserModel {
 		Password:  u.Password,
 		Email:     u.Email,
 		CreatedAt: u.CreatedAt,
+		IsSuper:   u.IsSuper,
 	}
 }
 
