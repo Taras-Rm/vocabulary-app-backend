@@ -29,6 +29,7 @@ type Words interface {
 	GetByWords(words []string, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
 	Search(settings models.SearchSettings, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
 	GetAllWordsCount(userIds []uint64) (int64, error)
+	GetCountOfWordsPerTime(userIds []uint64, time string) ([]models.WordsAddedPerTime, error)
 }
 
 func NewCollectionWordsRepo(client *elastic.Client) Words {
@@ -429,6 +430,40 @@ func (r *collectionWordsRepo) GetAllWordsCount(userIds []uint64) (int64, error) 
 	}
 
 	return countOfAllWords, nil
+}
+
+func (r *collectionWordsRepo) GetCountOfWordsPerTime(userIds []uint64, time string) ([]models.WordsAddedPerTime, error) {
+	var indices []string
+
+	for _, uId := range userIds {
+		index, err := r.getIndex(CollectionWordsOperationCtx{UserId: uId})
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		indices = append(indices, index.GetName())
+	}
+
+	ctx := context.Background()
+
+	aggregation := elastic.NewDateHistogramAggregation().CalendarInterval(time).Field("created_at")
+
+	result, err := r.client.Search().Index(indices...).Size(0).Aggregation("words_added_per_time", aggregation).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	aggregationResult, _ := result.Aggregations.AutoDateHistogram("words_added_per_time")
+
+	var responses []models.WordsAddedPerTime
+	for _, a := range aggregationResult.Buckets {
+		responses = append(responses, models.WordsAddedPerTime{
+			Count: uint64(a.DocCount),
+			Date:  *a.KeyAsString,
+		})
+	}
+
+	return responses, nil
 }
 
 func (r *collectionWordsRepo) getIndex(ctx CollectionWordsOperationCtx) (*myElastic.CollectionWordsIndex, error) {
