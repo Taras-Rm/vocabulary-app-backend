@@ -17,3 +17,8 @@ type SearchSettings struct {
 	SearchBy      string   `json:"searchBy"`
 	PartsOfSpeech []string `json:"partsOfSpeech"`
 }
+
+type WordsAddedPerTime struct {
+	Count uint64 `json:"count"`
+	Date  string `json:"date"`
+}
