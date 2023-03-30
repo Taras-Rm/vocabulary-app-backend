@@ -28,6 +28,7 @@ type Words interface {
 	GetAll(size, page uint64, wordsCtx CollectionWordsOperationCtx) ([]models.Word, uint64, error)
 	GetByWords(words []string, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
 	Search(settings models.SearchSettings, wordsCtx CollectionWordsOperationCtx) ([]models.Word, error)
+	SearchOnCollections(settings models.SearchSettings, userIds []uint64) ([]models.Word, error)
 	GetAllWordsCount(userIds []uint64) (int64, error)
 	GetCountOfWordsPerTime(userIds []uint64, time string) ([]models.WordsAddedPerTime, error)
 }
@@ -366,7 +367,6 @@ func (r *collectionWordsRepo) Search(settings models.SearchSettings, wordsCtx Co
 	query := elastic.NewBoolQuery()
 
 	q1 := elastic.NewWildcardQuery(settings.SearchBy, "*"+settings.TextForSearch+"*")
-	// q2 := elastic.NewMatchQuery("collection_id", collectionId)
 
 	query.Must(q1)
 
@@ -381,6 +381,66 @@ func (r *collectionWordsRepo) Search(settings models.SearchSettings, wordsCtx Co
 	}
 
 	searchResult, err := r.client.Search().Index(index.GetName()).Query(query).Do(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var words []models.Word
+	for _, hit := range searchResult.Hits.Hits {
+		var word ElasticWord
+		err := json.Unmarshal(hit.Source, &word)
+		if err != nil {
+			continue
+		}
+
+		words = append(words, models.Word{
+			Id:           hit.Id,
+			CollectionId: word.CollectionId,
+			Word:         word.Word,
+			Translation:  word.Translation,
+			PartOfSpeech: word.PartOfSpeech,
+			Scentance:    word.Scentance,
+			CreatedAt:    word.CreatedAt,
+		})
+	}
+
+	if len(words) == 0 {
+		return nil, nil
+	}
+
+	return words, nil
+}
+
+func (r *collectionWordsRepo) SearchOnCollections(settings models.SearchSettings, userIds []uint64) ([]models.Word, error) {
+	var indices []string
+
+	for _, uId := range userIds {
+		index, err := r.getIndex(CollectionWordsOperationCtx{UserId: uId})
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		indices = append(indices, index.GetName())
+	}
+
+	ctx := context.Background()
+
+	query := elastic.NewBoolQuery()
+
+	q1 := elastic.NewWildcardQuery(settings.SearchBy, "*"+settings.TextForSearch+"*")
+
+	query.Must(q1)
+
+	if len(settings.PartsOfSpeech) != 0 {
+		partsOfSpeechArr := make([]interface{}, len(settings.PartsOfSpeech))
+		for index, value := range settings.PartsOfSpeech {
+			partsOfSpeechArr[index] = value
+		}
+		q3 := elastic.NewTermsQuery("part_of_speech", partsOfSpeechArr...)
+
+		query.Must(q3)
+	}
+
+	searchResult, err := r.client.Search().Index(indices...).Query(query).Do(ctx)
 	if err != nil {
 		return nil, err
 	}
