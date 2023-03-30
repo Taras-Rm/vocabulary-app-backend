@@ -81,6 +81,7 @@ type Users interface {
 	GetByEmail(email string) (*models.User, error)
 	GetById(id uint64) (*models.User, error)
 	GetAll() ([]models.User, error)
+	GetByCollectionId(id uint64) (*models.User, error)
 
 	UpdateUserLanguage(language string, userId uint64) error
 }
@@ -122,6 +123,17 @@ func (r *userRepo) GetByEmail(email string) (*models.User, error) {
 
 	createdUser := user.FromModel()
 	return &createdUser, nil
+}
+
+func (r *userRepo) GetByCollectionId(id uint64) (*models.User, error) {
+	user := UserModel{}
+	err := r.db.Model(&user).Join("JOIN collections ON user_model.id = collections.owner_id").Where("collections.id=?", id).Select()
+	if err != nil {
+		return nil, err
+	}
+
+	findedUser := user.FromModel()
+	return &findedUser, nil
 }
 
 func (r *userRepo) GetById(id uint64) (*models.User, error) {
