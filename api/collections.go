@@ -53,19 +53,16 @@ func (a *App) createCollection(ctx *gin.Context) {
 		return
 	}
 
-	// check collection name
 	if collection != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("collection with such name already exists").Error())
 		return
 	}
 
-	// check languages
 	if input.LangFrom == "" || input.LangTo == "" {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("lang from and lang to can't be empty").Error())
 		return
 	}
 
-	// check languages
 	if input.LangFrom == input.LangTo {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("lang from and lang to can't be same").Error())
 		return
@@ -73,7 +70,6 @@ func (a *App) createCollection(ctx *gin.Context) {
 
 	user := a.getContextUser(ctx)
 
-	// create collection
 	collection, err = a.collectionRepo.Create(models.Collection{
 		Name:      input.Name,
 		OwnerId:   user.Id,
@@ -285,7 +281,6 @@ func (a *App) searchWordsInCollection(ctx *gin.Context) {
 func getSearchWordsInCollectionParams(ctx *gin.Context) (*models.SearchSettings, error) {
 	searchSettings := models.SearchSettings{}
 
-	// get search words params
 	searchBy := ctx.Query("searchBy")
 	if searchBy == "" {
 		return nil, errors.New("can not get search params")

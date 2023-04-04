@@ -53,7 +53,6 @@ func (a *App) createWord(ctx *gin.Context) {
 		return
 	}
 
-	// create word in elastic too
 	err = a.wordRepo.Create(models.Word{
 		Word:         input.Word,
 		Translation:  input.Translation,
@@ -83,7 +82,6 @@ func (a *App) getAllWords(ctx *gin.Context) {
 		return
 	}
 
-	// get pagination params
 	size, page, err := getPaginationParams(ctx)
 	if err != nil {
 		newErrorResponse(ctx, http.StatusBadRequest, err.Error())
@@ -106,7 +104,6 @@ func (a *App) getAllWords(ctx *gin.Context) {
 }
 
 func getPaginationParams(ctx *gin.Context) (uint64, uint64, error) {
-	// get pagination params
 	sizeStr := ctx.Query("size")
 	pageStr := ctx.Query("page")
 
@@ -197,7 +194,6 @@ func (a *App) updateWord(ctx *gin.Context) {
 		return
 	}
 
-	// create word in elastic too
 	err = a.wordRepo.Update(models.Word{
 		Id:           id,
 		Word:         input.Word,
@@ -295,7 +291,6 @@ func (a *App) createWords(ctx *gin.Context) {
 		})
 	}
 
-	// create words in elastic too
 	err = a.wordRepo.BulkCreate(words, elastic.CollectionWordsOperationCtx{CollectionId: uint64(input.CollectionId), UserId: user.Id})
 	if err != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, err.Error())
@@ -340,7 +335,6 @@ func (a *App) translateWord(ctx *gin.Context) {
 }
 
 func getTranslationParams(ctx *gin.Context) (string, string, error) {
-	// get translation params
 	langFrom := ctx.Query("langFrom")
 	langTo := ctx.Query("langTo")
 

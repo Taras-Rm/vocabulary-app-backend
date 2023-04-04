@@ -48,7 +48,6 @@ func (a *App) createUser(ctx *gin.Context) {
 		return
 	}
 
-	// check user email
 	if user != nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("user with such email already exists").Error())
 		return
@@ -60,7 +59,6 @@ func (a *App) createUser(ctx *gin.Context) {
 		return
 	}
 
-	// create user
 	user, err = a.userRepo.Create(models.User{
 		Name:      input.Name,
 		Email:     input.Email,
@@ -106,7 +104,6 @@ func (a *App) loginUser(ctx *gin.Context) {
 		return
 	}
 
-	// get user by email
 	if user == nil {
 		newErrorResponse(ctx, http.StatusInternalServerError, errors.New("user with such email not founded").Error())
 		return
