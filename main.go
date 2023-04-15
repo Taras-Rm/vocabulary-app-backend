@@ -58,7 +58,7 @@ func main() {
 	app := api.NewApp(usersRepo, collectionsRepo, elWordsRepo, *tokenService, translatorManager, s3Manager, hasher)
 
 	router.GET("/", func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, "hello from api")
+		ctx.JSON(http.StatusOK, "hello from api new")
 	})
 
 	app.AttachEndpoints(router)
