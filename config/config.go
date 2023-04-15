@@ -134,6 +134,24 @@ func (p *Prod) GetEnvVariables() error {
 	}
 	Config.Hasher.Cost = dataN
 
+	data, ok = os.LookupEnv("AWS_ID")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.AWS.AccessId = data
+
+	data, ok = os.LookupEnv("AWS_SECRET")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.AWS.Secret = data
+
+	data, ok = os.LookupEnv("AWS_REGION")
+	if !ok {
+		fmt.Println("can`t get env")
+	}
+	Config.AWS.Region = data
+
 	return nil
 }
 
