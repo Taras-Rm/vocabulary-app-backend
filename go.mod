@@ -11,6 +11,7 @@ require (
 	github.com/johnfercher/maroto v0.31.0
 	github.com/olivere/elastic/v7 v7.0.32
 	github.com/spf13/viper v1.14.0
+	golang.org/x/crypto v0.7.0
 )
 
 require (
@@ -55,7 +56,6 @@ require (
 	github.com/vmihailenco/tagparser v0.1.2 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.7.0 // indirect
 	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/text v0.8.0 // indirect

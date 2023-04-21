@@ -1,21 +1,62 @@
-# Vocabulary application API
+# Vocabulary app API
 
-This is REST API for Vocabulary application.
-The main application file is `main.go` file.
+This is REST API for Vocabulary application written on Go. Also it uses Elasticsearch and Postgresql as storages. The main application file is `main.go` file. Deployment branch is `new`.
 
-While it is no tests in application.
+## App link
+
+This is demo application link: https://d2aps8c8tddxti.cloudfront.net
+
+## Technologies
+
+- Go
+- Gin
+- Elasticsearch
+- Postgresql
 
 ## Install
     
     go mod download
+You also should add `docker-compose.yml` file for running elasticsearch and postgres localy. Here is an example of my docker-compose:
+```
+version: '3'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:7.10.2
+    environment:
+      - discovery.type=single-node
+    ports:
+      - 9200:9200
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:7.10.2
+    ports:
+      - 5601:5601
+    depends_on:
+      - elasticsearch
+    
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_DB: 
+      POSTGRES_USER: 
+      POSTGRES_PASSWORD: 
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data/
+
+volumes:
+  esdata:
+  pgdata:
+```
 
 ## Run the app localy
 
     go run main.go
 
-## Run the Dockerise app
-
-    docker-compose up
 
 ## Create migration
 
@@ -23,4 +64,4 @@ While it is no tests in application.
 
 ## Run migration
 
-    migrate -path ./migrations/postgres -database postgres://postgres:post1235@localhost:5432/vocabulary?sslmode=disable up
+    migrate -path ./migrations/postgres -database postgres://<username>:<password>@localhost:5432/<dbname>?sslmode=disable up
